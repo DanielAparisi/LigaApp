@@ -18,3 +18,43 @@
  * - TouchableOpacity para selección
  * - Iconos representativos de cada rol
  */
+import { useRouter } from 'expo-router';
+import { Button, StyleSheet, Text, View } from 'react-native';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../providers/AuthProvider';
+
+export default function SeleccionRol() {
+  const { session } = useAuth();
+  const router = useRouter();
+
+  const updateRole = async (role: 'jugador' | 'arbitro' | 'espectador') => {
+    if (!session) return;
+
+    // Actualizamos el rol en la tabla profiles [13]
+    const { error } = await supabase
+      .from('profiles')
+      .update({ role: role })
+      .eq('id', session.user.id);
+
+    if (!error) {
+      // Redirigir a la app principal
+      router.replace('/(app)/sedes');
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>¿Quién eres en la liga?</Text>
+      <Button title="Soy Jugador" onPress={() => updateRole('jugador')} />
+      <View style={{height: 10}} />
+      <Button title="Soy Árbitro" onPress={() => updateRole('arbitro')} />
+      <View style={{height: 10}} />
+      <Button title="Solo Espectador" onPress={() => updateRole('espectador')} />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'center', padding: 20 },
+  title: { fontSize: 20, marginBottom: 30, textAlign: 'center' }
+});

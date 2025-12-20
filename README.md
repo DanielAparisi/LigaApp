@@ -56,3 +56,35 @@ Imagina que tu aplicación es un Restaurante (La Liga):
 7. src/app: Es el Menú y las Mesas.
     ◦ auth: Es la recepción donde te identificas.
     ◦ sedes/[id]: Es una mesa específica. Aunque todas las mesas son iguales (la estructura del archivo es la misma), en una se sienta la familia "El Casar" y en otra la familia "Guadalajara" (los datos cambian dinámicamente).
+
+-- 1. Crear tabla de perfiles
+create table public.profiles (
+  id uuid references auth.users on delete cascade not null primary key,
+  email text,
+  role text default 'espectador', -- 'admin', 'arbitro', 'jugador', 'espectador'
+  full_name text,
+  avatar_url text
+);
+
+-- 2. Activar seguridad (Row Level Security)
+alter table public.profiles enable row level security;
+create policy "Public profiles are viewable by everyone." on public.profiles
+  for select using (true);
+create policy "Users can insert their own profile." on public.profiles
+  for insert with check (auth.uid() = id);
+create policy "Users can update own profile." on public.profiles
+  for update using (auth.uid() = id);
+
+-- 3. Trigger para crear perfil automático al registrarse [5]
+create function public.handle_new_user()
+returns trigger as $$
+begin
+  insert into public.profiles (id, email)
+  values (new.id, new.email);
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();

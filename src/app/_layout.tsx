@@ -50,3 +50,28 @@
  * - Providers funcionando en toda la app
  * - Rutas protegidas según rol de usuario
  */
+import { useRouter, useSegments } from 'expo-router';
+import { useEffect } from 'react';
+import { useAuth } from '../providers/AuthProvider';
+
+// Este componente debe estar DENTRO del AuthProvider, 
+// o usar un componente intermedio que consuma el hook useAuth.
+function RootLayoutNav() {
+  const { session, loading } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (loading) return;
+
+    const inAuthGroup = segments === '(auth)';
+
+    if (!session && !inAuthGroup) {
+      // Si no hay sesión y no estamos en auth, mandar a login [16]
+      router.replace('/(auth)/login');
+    } else if (session && inAuthGroup) {
+      // Si hay sesión y estamos en login, mandar a la app [14]
+      router.replace('/(app)/sedes');
+    }
+  }, [session, loading, segments]);
+}
