@@ -34,9 +34,13 @@ export default function LoginScreen() {
     setIsLoading(true);
     
     try {
+      console.log('🔐 Intentando login con:', email.trim());
       const { error } = await signIn(email.trim(), password);
       
       if (error) {
+        console.log('❌ Error de login:', error.message);
+        console.log('📋 Error completo:', error);
+        
         let errorMessage = 'Error al iniciar sesión';
         
         if (error.message?.includes('Invalid login credentials')) {
@@ -45,14 +49,19 @@ export default function LoginScreen() {
           errorMessage = 'Por favor confirma tu email antes de iniciar sesión.';
         } else if (error.message?.includes('Too many requests')) {
           errorMessage = 'Demasiados intentos. Inténtalo de nuevo en unos minutos.';
+        } else {
+          // Mostrar el error exacto para debugging
+          errorMessage = `Error: ${error.message}`;
         }
         
         Alert.alert('Error de Autenticación', errorMessage);
       } else {
+        console.log('✅ Login exitoso:', email);
         // Login exitoso - el useEffect del AuthProvider manejará la redirección
         router.replace('/(app)/sedes');
       }
     } catch (error) {
+      console.log('💥 Error inesperado:', error);
       Alert.alert('Error', 'Ocurrió un error inesperado. Inténtalo de nuevo.');
     } finally {
       setIsLoading(false);

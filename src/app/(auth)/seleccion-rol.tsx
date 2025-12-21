@@ -19,28 +19,47 @@
  * - Iconos representativos de cada rol
  */
 
-import { useRouter } from 'expo-router';
-import { StyleSheet, Text, View, TouchableOpacity, StatusBar, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { ActivityIndicator, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../providers/AuthProvider';
 
 export default function SeleccionRol() {
   const { session } = useAuth();
   const router = useRouter();
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const updateRole = async (role: 'jugador' | 'arbitro' | 'espectador') => {
-    if (!session) return;
-
-    // Actualizamos el rol en la tabla profiles
-    const { error } = await supabase
-      .from('profiles')
-      .update({ role: role })
-      .eq('id', session.user.id);
-
-    if (!error) {
-      // Redirigir a la app principal
-      router.replace('/(app)/sedes');
+    console.log('Seleccionando rol:', role);
+    
+    // Mostrar feedback visual
+    setSelectedRole(role);
+    setIsProcessing(true);
+    
+    // Pequeño delay para mostrar el feedback
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Redirigir a la pantalla de sedes
+    router.replace('/(app)/sedes');
+    
+    // Actualizar el rol en segundo plano (opcional)
+    if (session) {
+      supabase
+        .from('profiles')
+        .update({ role: role })
+        .eq('id', session.user.id)
+        .then(({ error }) => {
+          if (error) {
+            console.error('Error updating role:', error);
+          } else {
+            console.log('Rol actualizado exitosamente:', role);
+          }
+          setIsProcessing(false);
+          setSelectedRole(null);
+        });
     }
   };
 
@@ -62,12 +81,20 @@ export default function SeleccionRol() {
         <View style={styles.rolesContainer}>
           {/* Árbitro */}
           <TouchableOpacity 
-            style={styles.roleCard} 
+            style={[
+              styles.roleCard,
+              selectedRole === 'arbitro' && styles.roleCardSelected
+            ]} 
             onPress={() => updateRole('arbitro')}
             activeOpacity={0.8}
+            disabled={isProcessing}
           >
             <View style={styles.roleIconContainer}>
-              <Ionicons name="flag" size={32} color="#FF6B35" />
+              {selectedRole === 'arbitro' ? (
+                <ActivityIndicator size="small" color="#FF6B35" />
+              ) : (
+                <Ionicons name="flag" size={32} color="#FF6B35" />
+              )}
             </View>
             <Text style={styles.roleTitle}>Árbitro</Text>
             <Text style={styles.roleDescription}>
@@ -82,12 +109,20 @@ export default function SeleccionRol() {
 
           {/* Jugador */}
           <TouchableOpacity 
-            style={styles.roleCard} 
+            style={[
+              styles.roleCard,
+              selectedRole === 'jugador' && styles.roleCardSelected
+            ]} 
             onPress={() => updateRole('jugador')}
             activeOpacity={0.8}
+            disabled={isProcessing}
           >
             <View style={styles.roleIconContainer}>
-              <Ionicons name="person" size={32} color="#FF6B35" />
+              {selectedRole === 'jugador' ? (
+                <ActivityIndicator size="small" color="#FF6B35" />
+              ) : (
+                <Ionicons name="person" size={32} color="#FF6B35" />
+              )}
             </View>
             <Text style={styles.roleTitle}>Jugador</Text>
             <Text style={styles.roleDescription}>
@@ -102,12 +137,20 @@ export default function SeleccionRol() {
 
           {/* Espectador */}
           <TouchableOpacity 
-            style={styles.roleCard} 
+            style={[
+              styles.roleCard,
+              selectedRole === 'espectador' && styles.roleCardSelected
+            ]} 
             onPress={() => updateRole('espectador')}
             activeOpacity={0.8}
+            disabled={isProcessing}
           >
             <View style={styles.roleIconContainer}>
-              <Ionicons name="eye" size={32} color="#FF6B35" />
+              {selectedRole === 'espectador' ? (
+                <ActivityIndicator size="small" color="#FF6B35" />
+              ) : (
+                <Ionicons name="eye" size={32} color="#FF6B35" />
+              )}
             </View>
             <Text style={styles.roleTitle}>Espectador</Text>
             <Text style={styles.roleDescription}>
@@ -228,5 +271,21 @@ const styles = StyleSheet.create({
     color: '#888888',
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  roleCardSelected: {
+    borderColor: '#FF6B35',
+    backgroundColor: '#2f2f2f',
+    transform: [{ scale: 0.98 }],
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#FF6B35',
+    fontWeight: '500',
   },
 });

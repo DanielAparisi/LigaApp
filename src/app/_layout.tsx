@@ -1,77 +1,49 @@
-/**
- * 🎯 EJERCICIO 8: LAYOUT PRINCIPAL DE NAVEGACIÓN
- * 
- * OBJETIVO: Configurar el sistema de navegación y providers de la app
- * 
- * QUÉ TIENES QUE IMPLEMENTAR:
- * 
- * 1. IMPORTACIONES NECESARIAS:
- *    - Stack de expo-router
- *    - AuthProvider de ../providers/AuthProvider
- *    - QueryProvider de ../providers/QueryProvider
- *    - useAuth hook
- * 
- * 2. CONFIGURAR PROVIDERS:
- *    - Envolver toda la app con QueryProvider (más externo)
- *    - Dentro, envolver con AuthProvider
- *    - Dentro, poner el Stack de navegación
- * 
- * 3. CONFIGURAR STACK NAVIGATOR:
- *    - Stack.Navigator con screenOptions apropiadas
- *    - Configurar headerShown según pantalla
- *    - Gestionar navegación inicial según estado de auth
- * 
- * 4. LÓGICA DE REDIRECCIÓN:
- *    - Si loading: mostrar splash/loading screen
- *    - Si no user: redirigir a (auth) group
- *    - Si user pero no profile: redirigir a selección de rol
- *    - Si user y profile: redirigir a (app) group
- * 
- * 5. CONFIGURAR GRUPOS DE RUTAS:
- *    - (auth) group: login, registro, selección-rol
- *    - (app) group: sedes y pantallas principales
- *    - Usar Redirect component cuando sea necesario
- * 
- * 6. PANTALLA DE LOADING:
- *    - Mostrar mientras se verifica autenticación
- *    - Spinner/logo de la Liga
- *    - Evitar flashes de pantalla
- * 
- * ESTRUCTURA ESPERADA:
- * QueryProvider > AuthProvider > Stack.Navigator
- * 
- * PANTALLAS A CONFIGURAR:
- * - index: pantalla inicial/splash
- * - (auth): grupo de autenticación
- * - (app): grupo de app principal
- * 
- * RESULTADO ESPERADO:
- * - Navegación automática según estado de auth
- * - Providers funcionando en toda la app
- * - Rutas protegidas según rol de usuario
- */
-import { useRouter, useSegments } from 'expo-router';
-import { useEffect } from 'react';
-import { useAuth } from '../providers/AuthProvider';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import React from 'react';
+import AuthProvider from '../providers/AuthProvider';
+//import QueryProvider from '../providers/QueryProvider';
 
-// Este componente debe estar DENTRO del AuthProvider, 
-// o usar un componente intermedio que consuma el hook useAuth.
-function RootLayoutNav() {
-  const { session, loading } = useAuth();
-  const segments = useSegments();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (loading) return;
-
-    const inAuthGroup = segments.includes('(auth)');
-
-    if (!session && !inAuthGroup) {
-      // Si no hay sesión y no estamos en auth, mandar a login [16]
-      router.replace('/(auth)/login');
-    } else if (session && inAuthGroup) {
-      // Si hay sesión y estamos en login, mandar a la app [14]
-      router.replace('/(app)/sedes');
-    }
-  }, [session, loading, segments]);
+export default function RootLayout() {
+  return (
+   // <QueryProvider> Todo ---->QueryProvider
+      <AuthProvider>
+        <StatusBar style="light" backgroundColor="#1a1a1a" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: '#1a1a1a' },
+            animation: 'slide_from_right',
+          }}
+        >
+          {/* Pantalla inicial/splash */}
+          <Stack.Screen 
+            name="index" 
+            options={{ 
+              headerShown: false,
+              gestureEnabled: false 
+            }} 
+          />
+          
+          {/* Grupo de Autenticación */}
+          <Stack.Screen 
+            name="(auth)" 
+            options={{ 
+              headerShown: false,
+              gestureEnabled: false
+            }} 
+          />
+          
+          {/* Grupo de App Principal */}
+          <Stack.Screen 
+            name="(app)" 
+            options={{ 
+              headerShown: false,
+              gestureEnabled: true
+            }} 
+          />
+        </Stack>
+      </AuthProvider>
+    //</QueryProvider>
+  );
 }
