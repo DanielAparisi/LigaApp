@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
+    Alert,
     Image,
     KeyboardAvoidingView,
     Platform,
@@ -13,16 +14,49 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { useAuth } from '../../providers/AuthProvider';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  const { signIn } = useAuth();
+  const router = useRouter();
 
-  const handleLogin = () => {
-    // Aquí irá la lógica de autenticación
-    console.log('Login attempt:', { email, password });
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Error', 'Por favor completa todos los campos');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const { error } = await signIn(email.trim(), password);
+      
+      if (error) {
+        let errorMessage = 'Error al iniciar sesión';
+        
+        if (error.message?.includes('Invalid login credentials')) {
+          errorMessage = 'Credenciales incorrectas. Verifica tu email y contraseña.';
+        } else if (error.message?.includes('Email not confirmed')) {
+          errorMessage = 'Por favor confirma tu email antes de iniciar sesión.';
+        } else if (error.message?.includes('Too many requests')) {
+          errorMessage = 'Demasiados intentos. Inténtalo de nuevo en unos minutos.';
+        }
+        
+        Alert.alert('Error de Autenticación', errorMessage);
+      } else {
+        // Login exitoso - el useEffect del AuthProvider manejará la redirección
+        router.replace('/(app)/sedes');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Ocurrió un error inesperado. Inténtalo de nuevo.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -103,9 +137,12 @@ export default function LoginScreen() {
 
             {/* Login Button */}
             <TouchableOpacity 
-              style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+              style={[
+                styles.loginButton, 
+                (isLoading || !email.trim() || !password.trim()) && styles.loginButtonDisabled
+              ]}
               onPress={handleLogin}
-              disabled={isLoading}
+              disabled={isLoading || !email.trim() || !password.trim()}
             >
               {isLoading ? (
                 <Text style={styles.loginButtonText}>Iniciando sesión...</Text>
@@ -185,9 +222,9 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   logoImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 110,
+    height: 110,
+    borderRadius : 100,
   },
   title: {
     fontSize: 32,
@@ -264,8 +301,8 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   loginButtonDisabled: {
-    backgroundColor: '#FF6B35',
-    opacity: 0.7,
+    backgroundColor: '#666',
+    opacity: 0.6,
   },
   loginButtonText: {
     color: '#1a1a1a',
@@ -316,7 +353,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     alignItems: 'center',
-    paddingBottom: 30,
+    paddingBottom: 60,
     flexDirection: 'row',
     justifyContent: 'center',
   },
