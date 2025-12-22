@@ -53,9 +53,10 @@ export default function RegistroScreen() {
     setIsLoading(true);
     
     try {
-      const { error } = await signUp(email.trim(), password);
+      const { error, user } = await signUp(email.trim(), password);
       
       if (error) {
+        console.log('❌ Error de registro:', error);
         let errorMsg = 'Error al crear la cuenta';
         
         if (error.message?.includes('User already registered')) {
@@ -64,14 +65,20 @@ export default function RegistroScreen() {
           errorMsg = 'La contraseña es muy débil. Debe tener al menos 6 caracteres.';
         } else if (error.message?.includes('invalid_email')) {
           errorMsg = 'El formato del email no es válido.';
+        } else if (error.message?.includes('Email rate limit exceeded')) {
+          errorMsg = 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
         }
         
         setErrorMessage(errorMsg);
         setShowErrorModal(true);
-      } else {
-        setShowSuccessModal(true);
+      } else if (user) {
+        console.log('✅ Usuario registrado exitosamente:', user.email);
+        // Si el registro es exitoso, ir directamente a selección de rol
+        // Ya no mostramos modal porque el usuario ya está logueado
+        router.replace('/(auth)/seleccion-rol');
       }
     } catch (error) {
+      console.error('Error inesperado en registro:', error);
       setErrorMessage('Ocurrió un error inesperado. Inténtalo de nuevo.');
       setShowErrorModal(true);
     } finally {

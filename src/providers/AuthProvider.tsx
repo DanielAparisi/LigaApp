@@ -52,7 +52,7 @@ type AuthContextType = {
   role: string | null;
   isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string) => Promise<{ error: any; user?: any }>;
   signOut: () => Promise<void>;
   hasPermission: (action: string) => boolean;
 };
@@ -63,7 +63,7 @@ const AuthContext = createContext<AuthContextType>({
   role: null,
   isAdmin: false,
   signIn: async () => ({ error: null }),
-  signUp: async () => ({ error: null }),
+  signUp: async () => ({ error: null, user: null }),
   signOut: async () => {},
   hasPermission: () => false,
 });
@@ -78,7 +78,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     // 1. Obtener sesión inicial
     const fetchSession = async () => {
+      console.log('🔄 Obteniendo sesión inicial...');
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('📱 Sesión inicial:', session?.user?.email || 'No hay sesión');
       setSession(session);
       if (session) await fetchProfile(session.user.id);
       setLoading(false);
@@ -87,7 +89,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     fetchSession();
 
     // 2. Escuchar cambios (login, logout) [9]
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔔 Auth state changed:', event, session?.user?.email || 'No session');
       setSession(session);
       if (session) {
         await fetchProfile(session.user.id);
@@ -109,9 +112,25 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         .eq('id', userId)
         .single();
       
-      if (data) setRole(data.role);
+      if (error) {
+        // Si no existe el perfil, crearlo
+        if (error.code === 'PGRST116') {
+          console.log('Perfil no encontrado, creando...');
+          await supabase
+            .from('profiles')
+            .insert({
+              id: userId,
+              role: null
+            });
+          setRole(null);
+        } else {
+          console.error('Error fetching profile:', error);
+        }
+      } else if (data) {
+        setRole(data.role);
+      }
     } catch (e) {
-      console.error(e);
+      console.error('Error in fetchProfile:', e);
     }
   };
 
@@ -131,11 +150,29 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   // Función para registrarse
   const signUp = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: undefined, // Deshabilitar confirmación de email
+        }
       });
-      return { error };
+      
+      // Si el registro es exitoso, crear el perfil automáticamente
+      if (data.user && !error) {
+        try {
+          await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              role: null // Se asignará después en selección de rol
+            });
+        } catch (profileError) {
+          console.log('Error creando perfil:', profileError);
+        }
+      }
+      
+      return { error, user: data.user };
     } catch (error) {
       return { error };
     }
@@ -156,7 +193,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     
     const permissions: Record<string, string[]> = {
       arbitro: ['edit_match', 'add_goals', 'add_cards', 'edit_result', 'view_all'],
-      jugador: ['view_own_stats', 'view_team_info', 'view_public_info'],
+      jugador: ['view_own_stats', 'view_team_info', 'view_public_info', 'choose_team'],
       espectador: ['view_public_info'],
       admin: ['edit_match', 'add_goals', 'add_cards', 'edit_result', 'view_all', 'admin_actions']
     };
