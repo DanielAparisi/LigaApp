@@ -2,17 +2,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Alert,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { useAuth } from '../../providers/AuthProvider';
 
@@ -38,8 +38,8 @@ export default function LoginScreen() {
       const { error } = await signIn(email.trim(), password);
       
       if (error) {
-        console.log('❌ Error de login:', error.message);
-        console.log('📋 Error completo:', error);
+        console.log(' Error de login:', error.message);
+        console.log(' Error completo:', error);
         
         let errorMessage = 'Error al iniciar sesión';
         
@@ -61,7 +61,7 @@ export default function LoginScreen() {
         router.replace('/(app)/sedes');
       }
     } catch (error) {
-      console.log('💥 Error inesperado:', error);
+      console.log(' Error inesperado:', error);
       Alert.alert('Error', 'Ocurrió un error inesperado. Inténtalo de nuevo.');
     } finally {
       setIsLoading(false);

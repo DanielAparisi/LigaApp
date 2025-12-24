@@ -41,12 +41,14 @@ export default function RegistroScreen() {
     if (password !== confirmPassword) {
       setErrorMessage('Las contraseñas no coinciden');
       setShowErrorModal(true);
+
       return;
     }
 
     if (password.length < 6) {
       setErrorMessage('La contraseña debe tener al menos 6 caracteres');
       setShowErrorModal(true);
+
       return;
     }
 
@@ -269,28 +271,7 @@ export default function RegistroScreen() {
           </View>
         </View>
       </Modal>
-      <Modal
-        visible={showErrorModal}
-        transparent={true}
-        animationType="fade">
-         <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <View style={styles.successIconContainer}>
-                <Ionicons name="checkmark-circle" size={60} color="#FF6B35" />
-              </View>
-              <Text style={styles.modalTitle}>¡Cuenta Creada!</Text>
-              <Text style={styles.modalMessage}>
-                Tu cuenta NO se ha creado exitosamente
-              </Text>
-              <TouchableOpacity>
-                <Text style={styles.modalButtonText}>Continuar</Text>
-                <Ionicons name="arrow-forward" size={20} color="#1a1a1a" style={styles.modalButtonIcon} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+
       
       {/* Error Modal */}
       <Modal

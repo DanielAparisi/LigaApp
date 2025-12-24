@@ -1,5 +1,5 @@
 /**
- * 🎯 EJERCICIO 4: PROVEEDOR DE AUTENTICACIÓN
+ * 🎯 PROVEEDOR DE AUTENTICACIÓN
  * 
  * OBJETIVO: Crear el sistema de autenticación y manejo de roles
  * 
@@ -78,9 +78,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     // 1. Obtener sesión inicial
     const fetchSession = async () => {
-      console.log('🔄 Obteniendo sesión inicial...');
+      console.log(' Obteniendo sesión inicial...');
       const { data: { session } } = await supabase.auth.getSession();
-      console.log('📱 Sesión inicial:', session?.user?.email || 'No hay sesión');
+      console.log(' Sesión inicial:', session?.user?.email || 'No hay sesión');
       setSession(session);
       if (session) await fetchProfile(session.user.id);
       setLoading(false);
@@ -157,6 +157,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           emailRedirectTo: undefined, // Deshabilitar confirmación de email
         }
       });
+
+      // Si Supabase nos devuelve una sesión inmediatamente (email confirm desactivado), la guardamos
+      if (data.session) {
+        setSession(data.session);
+        await fetchProfile(data.session.user.id);
+      }
       
       // Si el registro es exitoso, crear el perfil automáticamente
       if (data.user && !error) {
