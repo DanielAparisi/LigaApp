@@ -14,7 +14,9 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../providers/AuthProvider';
+import { getAuthErrorMessage } from '../../utils/authErrors';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -41,24 +43,36 @@ export default function LoginScreen() {
         console.log(' Error de login:', error.message);
         console.log(' Error completo:', error);
         
-        let errorMessage = 'Error al iniciar sesión';
-        
-        if (error.message?.includes('Invalid login credentials')) {
-          errorMessage = 'Credenciales incorrectas. Verifica tu email y contraseña.';
-        } else if (error.message?.includes('Email not confirmed')) {
-          errorMessage = 'Por favor confirma tu email antes de iniciar sesión.';
-        } else if (error.message?.includes('Too many requests')) {
-          errorMessage = 'Demasiados intentos. Inténtalo de nuevo en unos minutos.';
-        } else {
-          // Mostrar el error exacto para debugging
-          errorMessage = `Error: ${error.message}`;
-        }
+        const errorMessage = getAuthErrorMessage(error);
         
         Alert.alert('Error de Autenticación', errorMessage);
       } else {
         console.log('✅ Login exitoso:', email);
-        // Login exitoso - el useEffect del AuthProvider manejará la redirección
-        router.replace('/(app)/sedes');
+        
+        // Verificar si el usuario ya tiene un rol asignado para redirigir correctamente
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          if (user) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', user.id)
+              .single();
+              
+            if (profile?.role) {
+              // Si ya tiene rol, ir a la app principal
+              router.replace('/(app)/sedes');
+            } else {
+              // Si no tiene rol (registro incompleto), ir a selección de rol
+              router.replace('/(auth)/seleccion-rol');
+            }
+          }
+        } catch (e) {
+          console.error('Error verificando rol:', e);
+          // Fallback: ir a la app principal si falla la verificación
+          router.replace('/(app)/sedes');
+        }
       }
     } catch (error) {
       console.log(' Error inesperado:', error);

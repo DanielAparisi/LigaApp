@@ -39,7 +39,7 @@ export default function SeleccionRol() {
     setSelectedRole(role);
     setIsProcessing(true);
     
-    // Pequeño delay para mostrar el feedback
+    // Pequeño delay para mostrar el feedback , tiempo de carga de pantalla.
     await new Promise(resolve => setTimeout(resolve, 800));
     
     // Redirigir a la pantalla de sedes

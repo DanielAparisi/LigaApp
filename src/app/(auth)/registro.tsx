@@ -15,6 +15,7 @@ import {
   View
 } from 'react-native';
 import { useAuth } from '../../providers/AuthProvider';
+import { getAuthErrorMessage } from '../../utils/authErrors';
 
 export default function RegistroScreen() {
   const [email, setEmail] = useState('');
@@ -59,17 +60,7 @@ export default function RegistroScreen() {
       
       if (error) {
         console.log('❌ Error de registro:', error);
-        let errorMsg = 'Error al crear la cuenta';
-        
-        if (error.message?.includes('User already registered')) {
-          errorMsg = 'Ya existe una cuenta con este email.';
-        } else if (error.message?.includes('weak_password')) {
-          errorMsg = 'La contraseña es muy débil. Debe tener al menos 6 caracteres.';
-        } else if (error.message?.includes('invalid_email')) {
-          errorMsg = 'El formato del email no es válido.';
-        } else if (error.message?.includes('Email rate limit exceeded')) {
-          errorMsg = 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.';
-        }
+        const errorMsg = getAuthErrorMessage(error);
         
         setErrorMessage(errorMsg);
         setShowErrorModal(true);
